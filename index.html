@@ -1,0 +1,713 @@
+
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Jom Masak Nasi Lemak!</title>
+<style>
+:root {
+  --green: #246440;
+  --light: #e9f3e5;
+  --cream: #fff9ed;
+  --orange: #ffba53;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--cream);
+  color: #243b2d;
+  font-family: system-ui, sans-serif;
+}
+button { font: inherit; touch-action: manipulation; }
+button:focus-visible, summary:focus-visible {
+  outline: 3px solid #c77800;
+  outline-offset: 3px;
+}
+header {
+  background: var(--green);
+  color: white;
+  padding: 24px 18px;
+  text-align: center;
+}
+h1 { margin: 0 0 6px; font-size: 1.65rem; }
+header p { margin: 0; opacity: .9; }
+main { max-width: 580px; margin: auto; padding: 16px; }
+.stats {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
+  font-weight: 700;
+}
+.track {
+  height: 12px;
+  background: #dbe5d5;
+  border-radius: 20px;
+  overflow: hidden;
+}
+.fill {
+  width: 0%;
+  height: 100%;
+  background: #55a460;
+  transition: width .25s;
+}
+.card {
+  margin-top: 16px;
+  padding: 20px;
+  border-radius: 22px;
+  background: white;
+  box-shadow: 0 6px 24px #244c3012;
+}
+h2 { margin: 6px 0 10px; font-size: 1.3rem; }
+p { line-height: 1.55; }
+.scene { font-size: 3.5rem; text-align: center; padding: 10px; }
+.small { font-size: .86rem; color: #586652; }
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.ingredient {
+  min-height: 100px;
+  border: 2px solid #e2e9de;
+  border-radius: 16px;
+  padding: 12px 7px;
+  background: #fffdf6;
+  color: #243b2d;
+}
+.ingredient span { display: block; font-size: 1.9rem; }
+.ingredient.selected {
+  background: var(--light);
+  border-color: var(--green);
+}
+.ingredient.wrong {
+  background: #fff0ed;
+  border-color: #d15e45;
+}
+button:disabled { cursor: default; opacity: .7; }
+.primary, .secondary {
+  width: 100%;
+  border: 0;
+  border-radius: 14px;
+  padding: 15px;
+  margin-top: 14px;
+  font-weight: 750;
+}
+.primary { background: var(--green); color: white; }
+.secondary { background: #eee8d9; color: #243b2d; }
+#notice { min-height: 48px; margin: 12px 0 0; font-weight: 600; }
+#workArea { margin-top: 16px; }
+#workText { text-align: center; margin-bottom: 8px; }
+details { margin-top: 18px; }
+summary { cursor: pointer; font-weight: 750; padding: 4px; }
+li { margin-bottom: 8px; line-height: 1.5; }
+ul, ol { padding-left: 23px; }
+[hidden] { display: none !important; }
+.badge {
+  display: inline-block;
+  background: #fff0c7;
+  padding: 5px 12px;
+  border-radius: 30px;
+  font-size: .85rem;
+  font-weight: bold;
+}
+.plate {
+  position: relative;
+  width: min(100%, 330px);
+  height: 250px;
+  margin: 20px auto;
+  background: #dce8df;
+  border: 14px solid #ecf2eb;
+  border-radius: 50%;
+  box-shadow: 0 6px 0 #c4d0c7;
+}
+.leaf {
+  position: absolute;
+  inset: 14px;
+  background: #2e6429;
+  border-radius: 50%;
+}
+.rice {
+  position: absolute;
+  left: 33%;
+  top: 29%;
+  width: 40%;
+  height: 49%;
+  border-radius: 48% 48% 35% 35%;
+  background: #fff9df;
+  box-shadow: inset -12px -8px 0 #e8e0c2;
+  display: grid;
+  place-items: center;
+  font-size: 2.2rem;
+}
+.side { position: absolute; font-size: 2rem; }
+.cucumber { left: 8%; top: 37%; }
+.peanuts { left: 23%; top: 8%; }
+.sambal {
+  right: 8%;
+  top: 13%;
+  background: #b92d1c;
+  border-radius: 50%;
+  padding: 3px 12px;
+}
+.fish { right: 3%; top: 47%; font-size: 1.5rem; }
+.egg { right: 14%; bottom: 6%; }
+footer { padding: 18px 0; text-align: center; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🌴 Jom Masak Nasi Lemak!</h1>
+  <p>Dapur kecil, rasa istimewa.</p>
+</header>
+
+<main>
+  <div class="stats">
+    <span id="stageLabel">Langkah 1 / 8</span>
+    <span>⭐ <span id="score">0</span> markah</span>
+  </div>
+  <div class="track" role="progressbar" id="overall"
+       aria-label="Kemajuan permainan"
+       aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+    <div class="fill" id="overallFill"></div>
+  </div>
+
+  <section class="card" id="game">
+    <div class="scene" id="scene"></div>
+    <span class="badge" id="category"></span>
+    <h2 id="title"></h2>
+    <p id="instruction"></p>
+    <p class="small" id="selection"></p>
+
+    <div class="grid" id="ingredients"></div>
+    <p id="notice" role="status" aria-live="polite"></p>
+
+    <div id="workArea" hidden>
+      <div id="workText"></div>
+      <div class="track">
+        <div class="fill" id="workFill"></div>
+      </div>
+    </div>
+
+    <button type="button" class="primary" id="action" disabled></button>
+    <p class="small">
+      ⏱️ Masa memasak dipendekkan untuk permainan.
+      Ikut resipi sebenar apabila memasak di dapur.
+    </p>
+  </section>
+
+  <section class="card" id="result" hidden>
+    <div style="text-align:center">
+      <div class="scene">🎉</div>
+      <h2>Nasi lemak sudah siap!</h2>
+      <p id="rating"></p>
+    </div>
+
+    <div class="plate" role="img"
+         aria-label="Nasi lemak di atas daun pisang dengan timun,
+                     kacang tanah, sambal, ikan bilis dan telur">
+      <div class="leaf"></div>
+      <div class="rice">🍚</div>
+      <div class="side cucumber">🥒</div>
+      <div class="side peanuts">🥜</div>
+      <div class="side sambal">🌶️</div>
+      <div class="side fish">🐟</div>
+      <div class="side egg">🥚</div>
+    </div>
+
+    <p style="text-align:center">
+      Hidangan lengkap dengan nasi santan, sambal,
+      ikan bilis, kacang tanah, telur dan timun.
+    </p>
+    <button type="button" class="primary" id="again">Main semula</button>
+  </section>
+
+  <details class="card">
+    <summary>📖 Resipi sebenar — 4 hidangan</summary>
+
+    <h3>Bahan nasi</h3>
+    <ul>
+      <li>2 cawan beras.</li>
+      <li>1 cawan santan.</li>
+      <li>Kira-kira 2 cawan air; sesuaikan jumlah cecair
+          mengikut jenis beras dan arahan periuk nasi.</li>
+      <li>2 helai daun pandan, disimpulkan.</li>
+      <li>½ sudu kecil garam.</li>
+    </ul>
+
+    <h3>Bahan sambal</h3>
+    <ul>
+      <li>1 biji bawang besar dan 2 ulas bawang putih.</li>
+      <li>3 sudu besar cili kisar.</li>
+      <li>4 sudu besar minyak masak.</li>
+      <li>1 sudu kecil pes asam jawa, dicampur 3 sudu besar air.</li>
+      <li>1 sudu besar gula dan garam secukup rasa.</li>
+      <li>Sedikit air tambahan jika sambal terlalu pekat.</li>
+    </ul>
+
+    <h3>Bahan sampingan</h3>
+    <ul>
+      <li>100 g ikan bilis, dibersihkan dan dikeringkan.</li>
+      <li>80 g kacang tanah.</li>
+      <li>2 biji telur dan air secukupnya untuk merebus.</li>
+      <li>½ batang timun, dibasuh dan dihiris.</li>
+      <li>Minyak secukupnya untuk menggoreng.</li>
+    </ul>
+
+    <h3>Cara memasak</h3>
+    <ol>
+      <li>Basuh beras 2–3 kali dan toskan.</li>
+      <li>Masukkan beras, santan, air, pandan dan garam ke dalam
+          periuk nasi. Masak mengikut arahan periuk. Setelah masak,
+          rehatkan 10 minit sebelum menggemburkan nasi.</li>
+      <li>Kisar bawang besar, bawang putih dan cili kisar.
+          Tambah sedikit air jika diperlukan.</li>
+      <li>Panaskan 4 sudu besar minyak dengan api sederhana kecil.
+          Tumis bahan kisar sambil dikacau selama kira-kira
+          10–15 minit, sehingga masak dan pecah minyak.
+          Masukkan air asam jawa, gula dan garam.
+          Reneh 3–5 minit; tambah air jika perlu.</li>
+      <li>Rebus telur sekitar 9–12 minit selepas air mula mendidih.
+          Sejukkan dalam air sejuk, kupas dan belah dua.</li>
+      <li>Goreng ikan bilis yang telah dikeringkan sehingga
+          keemasan dan rangup. Angkat serta toskan.</li>
+      <li>Goreng kacang tanah secara berasingan dengan api
+          sederhana kecil sehingga keemasan. Angkat dan toskan.</li>
+      <li>Hidangkan nasi bersama sambal, ikan bilis, kacang,
+          setengah biji telur dan hirisan timun.</li>
+    </ol>
+    <p class="small">
+      Keselamatan: minta bantuan orang dewasa jika perlu apabila
+      menggunakan pisau, pengisar, air mendidih atau minyak panas.
+      Pastikan ikan bilis kering sebelum digoreng untuk mengurangkan
+      percikan minyak. Hidangan ini mengandungi ikan, kacang dan telur.
+    </p>
+  </details>
+
+  <button type="button" class="secondary" id="restart">↻ Mula semula</button>
+  <footer class="small">Pilih bahan → Masak → Hidang</footer>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+
+const items = {
+  rice:       ["🍚", "Beras", "2 cawan"],
+  coconut:    ["🥥", "Santan", "1 cawan"],
+  water:      ["💧", "Air", "Mengikut resipi"],
+  pandan:     ["🌿", "Daun pandan", "2 helai"],
+  salt:       ["🧂", "Garam", "Mengikut resipi"],
+  onion:      ["🧅", "Bawang besar", "1 biji"],
+  garlic:     ["🧄", "Bawang putih", "2 ulas"],
+  chili:      ["🌶️", "Cili kisar", "3 sudu besar"],
+  paste:      ["🥣", "Bahan kisar", "Daripada langkah 3"],
+  oil:        ["🫗", "Minyak masak", "Mengikut resipi"],
+  tamarind:   ["🥣", "Air asam jawa", "Mengikut resipi"],
+  sugar:      ["🥄", "Gula", "1 sudu besar"],
+  egg:        ["🥚", "Telur", "2 biji"],
+  anchovy:    ["🐟", "Ikan bilis kering", "100 g"],
+  peanut:     ["🥜", "Kacang tanah", "80 g"],
+  cucumber:   ["🥒", "Timun dihiris", "½ batang"],
+  cookedRice: ["🍚", "Nasi santan", "Sudah dimasak"],
+  sambal:     ["🌶️", "Sambal", "Sudah dimasak"],
+  boiledEgg:  ["🥚", "Telur rebus", "Sudah dibelah"],
+  friedFish:  ["🐟", "Ikan bilis goreng", "Sudah ditoskan"],
+  friedNut:   ["🥜", "Kacang goreng", "Sudah ditoskan"],
+  chocolate:  ["🍫", "Coklat", "Bahan pengalih perhatian"],
+  cheese:     ["🧀", "Keju", "Bahan pengalih perhatian"],
+  strawberry: ["🍓", "Strawberi", "Bahan pengalih perhatian"]
+};
+
+const steps = [
+  {
+    title: "Basuh beras",
+    category: "Persediaan nasi",
+    scene: "🍚 💧",
+    instruction: "Pilih beras dan air. Kemudian tekan butang basuh "
+      + "sebanyak 3 kali untuk membasuh dan menoskan beras.",
+    needs: ["rice", "water"],
+    decoys: ["cheese", "chocolate"],
+    action: "💧 Basuh dan toskan",
+    taps: 3,
+    done: "Beras bersih! Mari masak nasi santan."
+  },
+  {
+    title: "Masak nasi santan",
+    category: "Nasi lemak",
+    scene: "🥥 🍲",
+    instruction: "Beras yang dibasuh sudah berada di dalam periuk. "
+      + "Pilih santan, air, pandan dan garam, kemudian hidupkan periuk nasi.",
+    needs: ["coconut", "water", "pandan", "salt"],
+    decoys: ["strawberry", "cheese"],
+    action: "🍲 Masak nasi",
+    seconds: 5,
+    done: "Nasi santan masak dan sudah direhatkan. Harumnya pandan!"
+  },
+  {
+    title: "Kisar bahan sambal",
+    category: "Persediaan sambal",
+    scene: "🧅 🧄 🌶️",
+    instruction: "Pilih bawang besar, bawang putih dan cili kisar. "
+      + "Tekan butang kisar sebanyak 3 kali.",
+    needs: ["onion", "garlic", "chili"],
+    decoys: ["chocolate"],
+    action: "⚙️ Kisar bahan",
+    taps: 3,
+    done: "Bahan sambal sudah dikisar halus."
+  },
+   {
+    title: "Tumis dan perasakan sambal",
+    category: "Sambal nasi lemak",
+    scene: "🌶️ 🍳",
+    instruction: "Pilih bahan kisar, minyak, air asam jawa, gula dan garam. "
+      + "Tekan 5 kali untuk simulasi menumis dan mengacau. "
+      + "Perasa dimasukkan selepas bahan tumisan masak dan pecah minyak.",
+    needs: ["paste", "oil", "tamarind", "sugar", "salt"],
+    decoys: ["chocolate"],
+    action: "🥄 Tumis dan kacau",
+    taps: 5,
+    done: "Sambal sudah masak! Rasanya pedas, manis dan sedikit masam."
+  },
+  {
+    title: "Rebus telur",
+    category: "Lauk sampingan",
+    scene: "🥚 🫕",
+    instruction: "Pilih telur dan air. Rebus sehingga masak keras. "
+      + "Dalam permainan, telur akan disejukkan, dikupas dan dibelah "
+      + "secara automatik selepas direbus.",
+    needs: ["egg", "water"],
+    decoys: ["cheese", "strawberry"],
+    action: "🫕 Rebus telur",
+    seconds: 4,
+    done: "Telur sudah masak, disejukkan dan dibelah dua."
+  },
+  {
+    title: "Goreng ikan bilis",
+    category: "Lauk rangup",
+    scene: "🐟 🍳",
+    instruction: "Pilih ikan bilis yang telah dibersihkan dan dikeringkan "
+      + "serta minyak masak. Goreng sehingga keemasan, kemudian toskan. "
+      + "Awas: bahan basah boleh menyebabkan minyak panas terpercik!",
+    needs: ["anchovy", "oil"],
+    decoys: ["chocolate", "coconut"],
+    action: "🍳 Goreng ikan bilis",
+    seconds: 4,
+    done: "Ikan bilis rangup sudah diangkat dan ditoskan."
+  },
+  {
+    title: "Goreng kacang tanah",
+    category: "Lauk rangup",
+    scene: "🥜 🍳",
+    instruction: "Pilih kacang tanah dan minyak. "
+      + "Goreng secara berasingan dengan api sederhana kecil "
+      + "sehingga keemasan, kemudian toskan.",
+    needs: ["peanut", "oil"],
+    decoys: ["cheese", "strawberry"],
+    action: "🍳 Goreng kacang",
+    seconds: 4,
+    done: "Kacang tanah sudah keemasan dan ditoskan."
+  },
+  {
+    title: "Hidangkan nasi lemak",
+    category: "Sentuhan terakhir",
+    scene: "🍽️ 🌴",
+    instruction: "Pilih semua komponen hidangan: nasi santan, sambal, "
+      + "telur rebus, ikan bilis goreng, kacang goreng dan timun. "
+      + "Kemudian tekan butang untuk menyusunnya di atas pinggan!",
+    needs: [
+      "cookedRice", "sambal", "boiledEgg",
+      "friedFish", "friedNut", "cucumber"
+    ],
+    decoys: ["chocolate", "cheese"],
+    action: "🍽️ Susun hidangan",
+    taps: 1,
+    done: "Semua komponen sudah disusun. Nasi lemak sedia dinikmati!"
+  }
+];
+
+let stage = 0;
+let score = 0;
+let selected = new Set();
+let taps = 0;
+let busy = false;
+let completed = false;
+let timer = null;
+
+const maxScore = steps.reduce(
+  (total, step) => total + step.needs.length * 10 + 20,
+  0
+);
+
+function shuffle(list) {
+  const copy = [...list];
+
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+
+  return copy;
+}
+
+function setNotice(message) {
+  $("notice").textContent = message;
+}
+
+function updateStats() {
+  $("score").textContent = score;
+
+  const finishedSteps = stage + (completed ? 1 : 0);
+  const percent = Math.min(100, finishedSteps / steps.length * 100);
+
+  $("stageLabel").textContent =
+    `Langkah ${Math.min(stage + 1, steps.length)} / ${steps.length}`;
+
+  $("overallFill").style.width = percent + "%";
+  $("overall").setAttribute("aria-valuenow", Math.round(percent));
+}
+
+function updateSelection() {
+  const step = steps[stage];
+  const ready = selected.size === step.needs.length;
+
+  $("selection").textContent =
+    `Bahan betul dipilih: ${selected.size} / ${step.needs.length}`;
+
+  $("action").disabled = !ready;
+
+  if (ready) {
+    setNotice("✅ Semua bahan lengkap. Mari mula!");
+  }
+}
+
+function chooseIngredient(id, button) {
+  if (busy || completed || button.disabled) return;
+
+  const step = steps[stage];
+
+  if (step.needs.includes(id)) {
+    selected.add(id);
+    score += 10;
+
+    button.classList.add("selected");
+    button.setAttribute("aria-pressed", "true");
+    button.disabled = true;
+
+    setNotice(`✅ ${items[id][1]} betul! +10 markah.`);
+  } else {
+    score = Math.max(0, score - 5);
+
+    button.classList.add("wrong");
+    button.disabled = true;
+
+    setNotice(
+      `❌ ${items[id][1]} tidak diperlukan untuk langkah ini. `
+      + "Tolak 5 markah. Cuba bahan lain!"
+    );
+  }
+
+  updateStats();
+  updateSelection();
+}
+
+function renderStage() {
+  clearInterval(timer);
+  timer = null;
+
+  selected = new Set();
+  taps = 0;
+  busy = false;
+  completed = false;
+
+  const step = steps[stage];
+
+  $("game").hidden = false;
+  $("result").hidden = true;
+
+  $("scene").textContent = step.scene;
+  $("category").textContent = step.category;
+  $("title").textContent = step.title;
+  $("instruction").textContent = step.instruction;
+
+  $("workArea").hidden = true;
+  $("workFill").style.width = "0%";
+  $("workText").textContent = "";
+
+  $("action").textContent = step.action;
+  $("action").disabled = true;
+  $("ingredients").replaceChildren();
+
+  setNotice("👆 Sentuh bahan yang diperlukan untuk langkah ini.");
+
+  const options = shuffle([...step.needs, ...step.decoys]);
+
+  options.forEach(id => {
+    const [emoji, name, amount] = items[id];
+
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "ingredient";
+    button.setAttribute("aria-pressed", "false");
+    button.setAttribute("aria-label", `${name}, ${amount}`);
+
+    const icon = document.createElement("span");
+    icon.textContent = emoji;
+    icon.setAttribute("aria-hidden", "true");
+
+    const label = document.createElement("strong");
+    label.textContent = name;
+
+    const quantity = document.createElement("div");
+    quantity.className = "small";
+    quantity.textContent = amount;
+
+    button.append(icon, label, quantity);
+    button.addEventListener("click", () => chooseIngredient(id, button));
+
+    $("ingredients").appendChild(button);
+  });
+
+  updateStats();
+  updateSelection();
+}
+
+function finishStage() {
+  clearInterval(timer);
+  timer = null;
+
+  busy = false;
+  completed = true;
+  score += 20;
+
+  $("workFill").style.width = "100%";
+  $("workText").textContent = "✅ Selesai!";
+  setNotice(steps[stage].done + " +20 markah.");
+
+  $("action").disabled = false;
+  $("action").textContent =
+    stage === steps.length - 1
+      ? "🎉 Lihat hidangan saya"
+      : "Seterusnya →";
+
+  updateStats();
+}
+
+function performAction() {
+  if (busy) return;
+
+  if (completed) {
+    if (stage === steps.length - 1) {
+      showResult();
+    } else {
+      stage++;
+      renderStage();
+    }
+    return;
+  }
+
+  const step = steps[stage];
+  if (selected.size !== step.needs.length) return;
+
+  $("workArea").hidden = false;
+
+  // Kunci semua bahan semasa aktiviti memasak.
+  $("ingredients").querySelectorAll("button").forEach(button => {
+    button.disabled = true;
+  });
+
+  if (step.taps) {
+    taps++;
+
+    const percent = Math.min(100, taps / step.taps * 100);
+
+    $("workFill").style.width = percent + "%";
+    $("workText").textContent = `${taps} / ${step.taps} tindakan`;
+
+    if (taps >= step.taps) {
+      finishStage();
+    } else {
+      $("action").textContent =
+        `${step.action} (${taps}/${step.taps})`;
+
+      setNotice("👍 Bagus! Tekan lagi untuk meneruskan.");
+    }
+
+    return;
+  }
+
+  busy = true;
+  $("action").disabled = true;
+  $("action").textContent = "⏳ Sedang memasak…";
+
+  setNotice("Tunggu sebentar. Ini masa simulasi, bukan masa memasak sebenar.");
+
+  const duration = step.seconds * 1000;
+  const started = Date.now();
+
+  $("workText").textContent = "Memasak… 0%";
+
+  timer = setInterval(() => {
+    const elapsed = Date.now() - started;
+    const percent = Math.min(100, elapsed / duration * 100);
+
+    $("workFill").style.width = percent + "%";
+    $("workText").textContent = `Memasak… ${Math.round(percent)}%`;
+
+    if (percent >= 100) finishStage();
+  }, 100);
+}
+
+function showResult() {
+  $("game").hidden = true;
+  $("result").hidden = false;
+
+  $("stageLabel").textContent = "Semua langkah selesai!";
+  $("overallFill").style.width = "100%";
+  $("overall").setAttribute("aria-valuenow", "100");
+
+  const ratio = score / maxScore;
+  let award;
+
+  if (ratio >= 0.9) {
+    award = "⭐⭐⭐ Hebat! Anda Chef Nasi Lemak!";
+  } else if (ratio >= 0.7) {
+    award = "⭐⭐ Bagus! Hidangan anda menyelerakan!";
+  } else {
+    award = "⭐ Syabas! Anda berjaya menyiapkan nasi lemak!";
+  }
+
+  $("rating").textContent =
+    `${award} Markah akhir: ${score} / ${maxScore}.`;
+
+  $("result").scrollIntoView({
+    behavior: "smooth",
+    block: "start"
+  });
+}
+
+function restartGame() {
+  clearInterval(timer);
+  timer = null;
+
+  stage = 0;
+  score = 0;
+
+  renderStage();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+$("action").addEventListener("click", performAction);
+$("again").addEventListener("click", restartGame);
+
+$("restart").addEventListener("click", () => {
+  if (window.confirm("Mula semula permainan? Markah akan dikosongkan.")) {
+    restartGame();
+  }
+});
+
+renderStage();
+</script>
+</body>
+</html>
